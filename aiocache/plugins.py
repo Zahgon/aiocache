@@ -33,25 +33,7 @@ class TimingPlugin(BasePlugin):
 
     @classmethod
     def save_time(cls, method):
-        async def do_save_time(self, client, *args, took=0, **kwargs):
-            if not hasattr(client, "profiling"):
-                client.profiling = {}
-
-            previous_total = client.profiling.get("{}_total".format(method), 0)
-            previous_avg = client.profiling.get("{}_avg".format(method), 0)
-            previous_max = client.profiling.get("{}_max".format(method), 0)
-            previous_min = client.profiling.get("{}_min".format(method))
-
-            client.profiling["{}_total".format(method)] = previous_total + 1
-            client.profiling["{}_avg".format(method)] = previous_avg + (took - previous_avg) / (
-                previous_total + 1
-            )
-            client.profiling["{}_max".format(method)] = max(took, previous_max)
-            client.profiling["{}_min".format(method)] = (
-                min(took, previous_min) if previous_min else took
-            )
-
-        return do_save_time
+        pass
 
 
 for method in API.CMDS:
@@ -69,30 +51,7 @@ class HitMissRatioPlugin(BasePlugin):
     """
 
     async def post_get(self, client, key, took=0, ret=None, **kwargs):
-        if not hasattr(client, "hit_miss_ratio"):
-            client.hit_miss_ratio = {}
-            client.hit_miss_ratio["total"] = 0
-            client.hit_miss_ratio["hits"] = 0
-
-        client.hit_miss_ratio["total"] += 1
-        if ret is not None:
-            client.hit_miss_ratio["hits"] += 1
-
-        client.hit_miss_ratio["hit_ratio"] = (
-            client.hit_miss_ratio["hits"] / client.hit_miss_ratio["total"]
-        )
+        pass
 
     async def post_multi_get(self, client, keys, took=0, ret=None, **kwargs):
-        if not hasattr(client, "hit_miss_ratio"):
-            client.hit_miss_ratio = {}
-            client.hit_miss_ratio["total"] = 0
-            client.hit_miss_ratio["hits"] = 0
-
-        client.hit_miss_ratio["total"] += len(keys)
-        for result in ret:
-            if result is not None:
-                client.hit_miss_ratio["hits"] += 1
-
-        client.hit_miss_ratio["hit_ratio"] = (
-            client.hit_miss_ratio["hits"] / client.hit_miss_ratio["total"]
-        )
+        pass

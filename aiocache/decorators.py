@@ -46,7 +46,7 @@ class cached:
     def __call__(self, f):
         @functools.wraps(f)
         async def wrapper(*args, **kwargs):
-            return await self.decorator(f, *args, **kwargs)
+            pass
 
         wrapper.cache = self.cache
         return wrapper
@@ -54,54 +54,19 @@ class cached:
     async def decorator(
         self, f, *args, cache_read=True, cache_write=True, aiocache_wait_for_write=True, **kwargs
     ):
-        key = self.get_cache_key(f, args, kwargs)
-
-        if cache_read:
-            value = await self.get_from_cache(key)
-            if value is not None:
-                return value
-
-        result = await f(*args, **kwargs)
-
-        if self.skip_cache_func(result):
-            return result
-
-        if cache_write:
-            if aiocache_wait_for_write:
-                await self.set_in_cache(key, result)
-            else:
-                # TODO: Use aiojobs to avoid warnings.
-                asyncio.create_task(self.set_in_cache(key, result))
-
-        return result
+        pass
 
     def get_cache_key(self, f, args, kwargs):
-        if self.key_builder:
-            return self.key_builder(f, *args, **kwargs)
-
-        return self._key_from_args(f, args, kwargs)
+        pass
 
     def _key_from_args(self, func, args, kwargs):
-        ordered_kwargs = sorted(kwargs.items())
-        return (
-            (func.__module__ or "")
-            + func.__name__
-            + str(args[1:] if self.noself else args)
-            + str(ordered_kwargs)
-        )
+        pass
 
     async def get_from_cache(self, key):
-        try:
-            return await self.cache.get(key)
-        except Exception:
-            logger.exception("Couldn't retrieve %s, unexpected error", key)
-        return None
+        pass
 
     async def set_in_cache(self, key, value):
-        try:
-            await self.cache.set(key, value, ttl=self.ttl)
-        except Exception:
-            logger.exception("Couldn't set %s in key %s, unexpected error", value, key)
+        pass
 
 
 class cached_stampede(cached):
@@ -133,35 +98,11 @@ class cached_stampede(cached):
         self.lease = lease
 
     async def decorator(self, f, *args, **kwargs):
-        key = self.get_cache_key(f, args, kwargs)
-
-        value = await self.get_from_cache(key)
-        if value is not None:
-            return value
-
-        async with RedLock(self.cache, key, self.lease):
-            value = await self.get_from_cache(key)
-            if value is not None:
-                return value
-
-            result = await f(*args, **kwargs)
-
-            if self.skip_cache_func(result):
-                return result
-
-            await self.set_in_cache(key, result)
-
-        return result
+        pass
 
 
 def _get_args_dict(func, args, kwargs):
-    defaults = {
-        arg_name: arg.default
-        for arg_name, arg in inspect.signature(func).parameters.items()
-        if arg.default is not inspect._empty  # TODO: bug prone..
-    }
-    args_names = func.__code__.co_varnames[: func.__code__.co_argcount]
-    return {**defaults, **dict(zip(args_names, args)), **kwargs}
+    pass
 
 
 class multi_cached:
@@ -231,7 +172,7 @@ class multi_cached:
     def __call__(self, f):
         @functools.wraps(f)
         async def wrapper(*args, **kwargs):
-            return await self.decorator(f, *args, **kwargs)
+            pass
 
         wrapper.cache = self.cache
         return wrapper
@@ -239,72 +180,13 @@ class multi_cached:
     async def decorator(
         self, f, *args, cache_read=True, cache_write=True, aiocache_wait_for_write=True, **kwargs
     ):
-        missing_keys = []
-        partial = {}
-        orig_keys, cache_keys, new_args, args_index = self.get_cache_keys(f, args, kwargs)
-
-        if cache_read:
-            values = await self.get_from_cache(*cache_keys)
-            for orig_key, value in zip(orig_keys, values):
-                if value is None:
-                    missing_keys.append(orig_key)
-                else:
-                    partial[orig_key] = value
-            if values and None not in values:
-                return partial
-        else:
-            missing_keys = list(orig_keys)
-
-        if args_index > -1:
-            new_args[args_index] = missing_keys
-        else:
-            kwargs[self.keys_from_attr] = missing_keys
-
-        result = await f(*new_args, **kwargs)
-        result.update(partial)
-
-        to_cache = {k: v for k, v in result.items() if not self.skip_cache_func(k, v)}
-
-        if not to_cache:
-            return result
-
-        if cache_write:
-            if aiocache_wait_for_write:
-                await self.set_in_cache(to_cache, f, args, kwargs)
-            else:
-                # TODO: Use aiojobs to avoid warnings.
-                asyncio.create_task(self.set_in_cache(to_cache, f, args, kwargs))
-
-        return result
+        pass
 
     def get_cache_keys(self, f, args, kwargs):
-        args_dict = _get_args_dict(f, args, kwargs)
-        orig_keys = args_dict.get(self.keys_from_attr, []) or []
-        cache_keys = [self.key_builder(key, f, *args, **kwargs) for key in orig_keys]
-
-        args_names = f.__code__.co_varnames[: f.__code__.co_argcount]
-        new_args = list(args)
-        keys_index = -1
-        if self.keys_from_attr in args_names and self.keys_from_attr not in kwargs:
-            keys_index = args_names.index(self.keys_from_attr)
-
-        return orig_keys, cache_keys, new_args, keys_index
+        pass
 
     async def get_from_cache(self, *keys):
-        if not keys:
-            return []
-        try:
-            values = await self.cache.multi_get(keys)
-            return values
-        except Exception:
-            logger.exception("Couldn't retrieve %s, unexpected error", keys)
-            return [None] * len(keys)
+        pass
 
     async def set_in_cache(self, result, fn, fn_args, fn_kwargs):
-        try:
-            await self.cache.multi_set(
-                [(self.key_builder(k, fn, *fn_args, **fn_kwargs), v) for k, v in result.items()],
-                ttl=self.ttl,
-            )
-        except Exception:
-            logger.exception("Couldn't set %s, unexpected error", result)
+        pass

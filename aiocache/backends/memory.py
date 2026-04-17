@@ -38,121 +38,57 @@ class SimpleMemoryCache(BaseCache[str]):
 
     def _mark_accessed(self, key: str) -> None:
         """Move key to end to mark as recently used."""
-        if key in self._cache:
-            self._cache.move_to_end(key)
+        pass
 
     def _evict_if_needed(self) -> None:
         """Evict least recently used items if over maxsize."""
-        if self.maxsize is None:
-            return
-
-        while len(self._cache) > self.maxsize:
-            key, _ = self._cache.popitem(last=False)  # Remove LRU item
-            if key in self._handlers:
-                self._handlers[key].cancel()
-                del self._handlers[key]
+        pass
 
     async def _get(self, key, encoding="utf-8", _conn=None):
-        self._mark_accessed(key)
-        return self._cache.get(key)
+        pass
 
     async def _gets(self, key, encoding="utf-8", _conn=None):
-        return await self._get(key, encoding=encoding, _conn=_conn)
+        pass
 
     async def _multi_get(self, keys, encoding="utf-8", _conn=None):
-        return [await self._get(key, encoding=encoding, _conn=_conn) for key in keys]
+        pass
 
     async def _set(self, key, value, ttl=None, _cas_token=None, _conn=None):
-        if _cas_token is not None and self._cache.get(key) != _cas_token:
-            return 0
-
-        if key in self._handlers:
-            self._handlers[key].cancel()
-
-        self._cache[key] = value
-        self._cache.move_to_end(key)
-
-        if ttl:
-            loop = asyncio.get_running_loop()
-            self._handlers[key] = loop.call_later(ttl, self.__delete, key)
-
-        # Evict the oldest items if over limit
-        self._evict_if_needed()
-        return True
+        pass
 
     async def _multi_set(self, pairs, ttl=None, _conn=None):
-        for key, value in pairs:
-            await self._set(key, value, ttl=ttl)
-        return True
+        pass
 
     async def _add(self, key, value, ttl=None, _conn=None):
-        if key in self._cache:
-            raise ValueError(f"Key {key} already exists, use .set to update")
-        return await self._set(key, value, ttl=ttl)
+        pass
 
     async def _exists(self, key, _conn=None):
-        return key in self._cache
+        pass
 
     async def _increment(self, key, delta, _conn=None):
-        if key not in self._cache:
-            self._cache[key] = delta
-        else:
-            try:
-                self._cache[key] = int(self._cache[key]) + delta
-            except ValueError:
-                raise TypeError("Value is not an integer") from None
-        self._mark_accessed(key)
-        return self._cache[key]
+        pass
 
     async def _expire(self, key, ttl, _conn=None):
-        if key not in self._cache:
-            return False
-
-        # Cancel existing timer
-        if key in self._handlers:
-            self._handlers[key].cancel()
-
-        # Set new timer
-        if ttl:
-            loop = asyncio.get_running_loop()
-            self._handlers[key] = loop.call_later(ttl, self.__delete, key)
-
-        self._mark_accessed(key)
-        return True
+        pass
 
     async def _delete(self, key, _conn=None):
-        return self.__delete(key)
+        pass
 
     async def _clear(self, namespace=None, _conn=None):
-        if namespace:
-            for key in list(self._cache):
-                if key.startswith(namespace):
-                    self.__delete(key)
-        else:
-            self._cache = OrderedDict()
-            self._handlers = {}
-        return True
+        pass
 
     async def _raw(self, command, *args, encoding="utf-8", _conn=None, **kwargs):
-        return getattr(self._cache, command)(*args, **kwargs)
+        pass
 
     async def _redlock_release(self, key, value):
-        if self._cache.get(key) == value:
-            return self.__delete(key)
-        return 0
+        pass
 
     def __delete(self, key):
-        if self._cache.pop(key, None) is not None:
-            handle = self._handlers.pop(key, None)
-            if handle:
-                handle.cancel()
-            return 1
-
-        return 0
+        pass
 
     def build_key(self, key: str, namespace: Optional[str] = None) -> str:
-        return self._str_build_key(key, namespace)
+        pass
 
     @classmethod
     def parse_uri_path(cls, path):
-        return {}
+        pass

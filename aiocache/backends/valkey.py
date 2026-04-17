@@ -63,111 +63,51 @@ class ValkeyCache(BaseCache[str]):
         await self.client.close()
 
     async def _get(self, key, encoding="utf-8", _conn=None):
-        value = await self.client.get(key)
-        if encoding is None or value is None:
-            return value
-        return value.decode(encoding)
+        pass
 
     _gets = _get
 
     async def _multi_get(self, keys, encoding="utf-8", _conn=None):
-        values = await self.client.mget(keys)
-        if encoding is None:
-            return values
-        return [v if v is None else v.decode(encoding) for v in values]
+        pass
 
     async def _set(self, key, value, ttl=None, _cas_token=None, _conn=None):
-        if isinstance(ttl, float):
-            ttl = ExpirySet(ExpiryType.MILLSEC, int(ttl * 1000))
-        elif ttl:
-            ttl = ExpirySet(ExpiryType.SEC, ttl)
-
-        if _cas_token is not None:
-            return await self._cas(key, value, _cas_token, ttl=ttl, _conn=_conn)
-
-        return await self.client.set(key, value, expiry=ttl) == "OK"
+        pass
 
     async def _cas(self, key, value, token, ttl=None, _conn=None):
-        if await self._get(key) == token:
-            return await self.client.set(key, value, expiry=ttl) == "OK"
-        return 0
+        pass
 
     async def _multi_set(self, pairs, ttl=None, _conn=None):
-        values = dict(pairs)
-
-        if ttl:
-            await self.__multi_set_ttl(values, ttl)
-        else:
-            await self.client.mset(values)
-
-        return True
+        pass
 
     async def __multi_set_ttl(self, values, ttl):
-        transaction = Batch(is_atomic=True)
-        transaction.mset(values)
-        ttl, exp = (
-            (int(ttl * 1000), transaction.pexpire)
-            if isinstance(ttl, float)
-            else (ttl, transaction.expire)
-        )
-        for key in values:
-            exp(key, ttl)
-        await self.client.exec(transaction, raise_on_error=True)
+        pass
 
     async def _add(self, key, value, ttl=None, _conn=None):
-        kwargs = {"conditional_set": ConditionalChange.ONLY_IF_DOES_NOT_EXIST}
-        if isinstance(ttl, float):
-            kwargs["expiry"] = ExpirySet(ExpiryType.MILLSEC, int(ttl * 1000))
-        elif ttl:
-            kwargs["expiry"] = ExpirySet(ExpiryType.SEC, ttl)
-        was_set = await self.client.set(key, value, **kwargs)
-        if was_set != "OK":
-            raise ValueError(
-                "Key {} already exists, use .set to update the value".format(key)
-            )
-        return was_set
+        pass
 
     async def _exists(self, key, _conn=None):
-        return bool(await self.client.exists([key]))
+        pass
 
     async def _increment(self, key, delta, _conn=None):
-        try:
-            return await self.client.incrby(key, delta)
-        except IncrbyException:
-            raise TypeError("Value is not an integer") from None
+        pass
 
     async def _expire(self, key, ttl, _conn=None):
-        if ttl == 0:
-            return await self.client.persist(key)
-        return await self.client.expire(key, ttl)
+        pass
 
     async def _delete(self, key, _conn=None):
-        return await self.client.delete([key])
+        pass
 
     async def _clear(self, namespace=None, _conn=None):
-        if not namespace:
-            return await self.client.flushdb()
-
-        _, keys = await self.client.scan(b"0", "{}:*".format(namespace))
-        if keys:
-            return bool(await self.client.delete(keys))
-
-        return True
+        pass
 
     async def _raw(self, command, *args, encoding="utf-8", _conn=None, **kwargs):
-        value = await getattr(self.client, command)(*args, **kwargs)
-        if encoding is not None:
-            if command == "get" and value is not None:
-                value = value.decode(encoding)
-        return value
+        pass
 
     async def _redlock_release(self, key, value):
-        if await self._get(key) == value:
-            return await self.client.delete([key])
-        return 0
+        pass
 
     def build_key(self, key: str, namespace: Optional[str] = None) -> str:
-        return self._str_build_key(key, namespace)
+        pass
 
     @classmethod
     def parse_uri_path(cls, path):
@@ -179,11 +119,7 @@ class ValkeyCache(BaseCache[str]):
         :param path: string containing the path. Example: "/0"
         :return: mapping containing the options. Example: {"db": "0"}
         """
-        options = {}
-        db, *_ = path[1:].split("/")
-        if db:
-            options["db"] = db
-        return options
+        pass
 
     def __repr__(self):  # pragma: no cover
         return (

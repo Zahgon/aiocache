@@ -27,12 +27,11 @@ class API:
 
     @classmethod
     def register(cls, func):
-        API.CMDS.add(func)
-        return func
+        pass
 
     @classmethod
     def unregister(cls, func):
-        API.CMDS.discard(func)
+        pass
 
     @classmethod
     def timeout(cls, func):
@@ -44,16 +43,7 @@ class API:
 
         Use 0 or None to disable the timeout.
         """
-        NOT_SET = "NOT_SET"
-
-        @functools.wraps(func)
-        async def _timeout(self, *args, timeout=NOT_SET, **kwargs):
-            timeout = self.timeout if timeout == NOT_SET else timeout
-            if timeout == 0 or timeout is None:
-                return await func(self, *args, **kwargs)
-            return await asyncio.wait_for(func(self, *args, **kwargs), timeout)
-
-        return _timeout
+        pass
 
     @classmethod
     def aiocache_enabled(cls, fake_return=None):
@@ -64,33 +54,14 @@ class API:
 
         def enabled(func):
             @functools.wraps(func)
-            async def _enabled(*args, **kwargs):
-                if os.getenv("AIOCACHE_DISABLE") == "1":
-                    return fake_return
-                return await func(*args, **kwargs)
-
-            return _enabled
+            pass
 
         return enabled
 
     @classmethod
     def plugins(cls, func):
         @functools.wraps(func)
-        async def _plugins(self, *args, **kwargs):
-            start = time.monotonic()
-            for plugin in self.plugins:
-                await getattr(plugin, "pre_{}".format(func.__name__))(self, *args, **kwargs)
-
-            ret = await func(self, *args, **kwargs)
-
-            end = time.monotonic()
-            for plugin in self.plugins:
-                await getattr(plugin, "post_{}".format(func.__name__))(
-                    self, *args, took=end - start, ret=ret, **kwargs
-                )
-            return ret
-
-        return _plugins
+        pass
 
 
 class BaseCache(Generic[CacheKeyType], ABC):
@@ -134,19 +105,19 @@ class BaseCache(Generic[CacheKeyType], ABC):
 
     @property
     def serializer(self):
-        return self._serializer
+        pass
 
     @serializer.setter
     def serializer(self, value):
-        self._serializer = value
+        pass
 
     @property
     def plugins(self):
-        return self._plugins
+        pass
 
     @plugins.setter
     def plugins(self, value):
-        self._plugins = value
+        pass
 
     @API.register
     @API.aiocache_enabled(fake_return=True)
@@ -171,18 +142,11 @@ class BaseCache(Generic[CacheKeyType], ABC):
             - ValueError if key already exists
             - :class:`asyncio.TimeoutError` if it lasts more than self.timeout
         """
-        start = time.monotonic()
-        dumps = dumps_fn or self.serializer.dumps
-        ns_key = self.build_key(key, namespace)
-
-        await self._add(ns_key, dumps(value), ttl=self._get_ttl(ttl), _conn=_conn)
-
-        logger.debug("ADD %s %s (%.4f)s", ns_key, True, time.monotonic() - start)
-        return True
+        pass
 
     @abstractmethod
     async def _add(self, key, value, ttl, _conn=None):
-        raise NotImplementedError()
+        pass
 
     @API.register
     @API.aiocache_enabled()
@@ -201,22 +165,15 @@ class BaseCache(Generic[CacheKeyType], ABC):
         :returns: obj loaded
         :raises: :class:`asyncio.TimeoutError` if it lasts more than self.timeout
         """
-        start = time.monotonic()
-        loads = loads_fn or self.serializer.loads
-        ns_key = self.build_key(key, namespace)
-
-        value = loads(await self._get(ns_key, encoding=self.serializer.encoding, _conn=_conn))
-
-        logger.debug("GET %s %s (%.4f)s", ns_key, value is not None, time.monotonic() - start)
-        return value if value is not None else default
+        pass
 
     @abstractmethod
     async def _get(self, key, encoding, _conn=None):
-        raise NotImplementedError()
+        pass
 
     @abstractmethod
     async def _gets(self, key, encoding="utf-8", _conn=None):
-        raise NotImplementedError()
+        pass
 
     @API.register
     @API.aiocache_enabled(fake_return=[])
@@ -234,28 +191,11 @@ class BaseCache(Generic[CacheKeyType], ABC):
         :returns: list of objs
         :raises: :class:`asyncio.TimeoutError` if it lasts more than self.timeout
         """
-        start = time.monotonic()
-        loads = loads_fn or self.serializer.loads
-
-        ns_keys = [self.build_key(key, namespace) for key in keys]
-        values = [
-            loads(value)
-            for value in await self._multi_get(
-                ns_keys, encoding=self.serializer.encoding, _conn=_conn
-            )
-        ]
-
-        logger.debug(
-            "MULTI_GET %s %d (%.4f)s",
-            ns_keys,
-            len([value for value in values if value is not None]),
-            time.monotonic() - start,
-        )
-        return values
+        pass
 
     @abstractmethod
     async def _multi_get(self, keys, encoding, _conn=None):
-        raise NotImplementedError()
+        pass
 
     @API.register
     @API.aiocache_enabled(fake_return=True)
@@ -279,20 +219,11 @@ class BaseCache(Generic[CacheKeyType], ABC):
         :returns: True if the value was set
         :raises: :class:`asyncio.TimeoutError` if it lasts more than self.timeout
         """
-        start = time.monotonic()
-        dumps = dumps_fn or self.serializer.dumps
-        ns_key = self.build_key(key, namespace)
-
-        res = await self._set(
-            ns_key, dumps(value), ttl=self._get_ttl(ttl), _cas_token=_cas_token, _conn=_conn
-        )
-
-        logger.debug("SET %s %d (%.4f)s", ns_key, True, time.monotonic() - start)
-        return res
+        pass
 
     @abstractmethod
     async def _set(self, key, value, ttl, _cas_token=None, _conn=None):
-        raise NotImplementedError()
+        pass
 
     @API.register
     @API.aiocache_enabled(fake_return=True)
@@ -313,26 +244,11 @@ class BaseCache(Generic[CacheKeyType], ABC):
         :returns: True
         :raises: :class:`asyncio.TimeoutError` if it lasts more than self.timeout
         """
-        start = time.monotonic()
-        dumps = dumps_fn or self.serializer.dumps
-
-        tmp_pairs = []
-        for key, value in pairs:
-            tmp_pairs.append((self.build_key(key, namespace), dumps(value)))
-
-        await self._multi_set(tmp_pairs, ttl=self._get_ttl(ttl), _conn=_conn)
-
-        logger.debug(
-            "MULTI_SET %s %d (%.4f)s",
-            [key for key, value in tmp_pairs],
-            len(tmp_pairs),
-            time.monotonic() - start,
-        )
-        return True
+        pass
 
     @abstractmethod
     async def _multi_set(self, pairs, ttl, _conn=None):
-        raise NotImplementedError()
+        pass
 
     @API.register
     @API.aiocache_enabled(fake_return=0)
@@ -349,15 +265,11 @@ class BaseCache(Generic[CacheKeyType], ABC):
         :returns: int number of deleted keys
         :raises: :class:`asyncio.TimeoutError` if it lasts more than self.timeout
         """
-        start = time.monotonic()
-        ns_key = self.build_key(key, namespace)
-        ret = await self._delete(ns_key, _conn=_conn)
-        logger.debug("DELETE %s %d (%.4f)s", ns_key, ret, time.monotonic() - start)
-        return ret
+        pass
 
     @abstractmethod
     async def _delete(self, key, _conn=None):
-        raise NotImplementedError()
+        pass
 
     @API.register
     @API.aiocache_enabled(fake_return=False)
@@ -374,15 +286,11 @@ class BaseCache(Generic[CacheKeyType], ABC):
         :returns: True if key exists otherwise False
         :raises: :class:`asyncio.TimeoutError` if it lasts more than self.timeout
         """
-        start = time.monotonic()
-        ns_key = self.build_key(key, namespace)
-        ret = await self._exists(ns_key, _conn=_conn)
-        logger.debug("EXISTS %s %d (%.4f)s", ns_key, ret, time.monotonic() - start)
-        return ret
+        pass
 
     @abstractmethod
     async def _exists(self, key, _conn=None):
-        raise NotImplementedError()
+        pass
 
     @API.register
     @API.aiocache_enabled(fake_return=1)
@@ -402,15 +310,11 @@ class BaseCache(Generic[CacheKeyType], ABC):
         :raises: :class:`asyncio.TimeoutError` if it lasts more than self.timeout
         :raises: :class:`TypeError` if value is not incrementable
         """
-        start = time.monotonic()
-        ns_key = self.build_key(key, namespace)
-        ret = await self._increment(ns_key, delta, _conn=_conn)
-        logger.debug("INCREMENT %s %d (%.4f)s", ns_key, ret, time.monotonic() - start)
-        return ret
+        pass
 
     @abstractmethod
     async def _increment(self, key, delta, _conn=None):
-        raise NotImplementedError()
+        pass
 
     @API.register
     @API.aiocache_enabled(fake_return=False)
@@ -428,15 +332,11 @@ class BaseCache(Generic[CacheKeyType], ABC):
         :returns: True if set, False if key is not found
         :raises: :class:`asyncio.TimeoutError` if it lasts more than self.timeout
         """
-        start = time.monotonic()
-        ns_key = self.build_key(key, namespace)
-        ret = await self._expire(ns_key, ttl, _conn=_conn)
-        logger.debug("EXPIRE %s %d (%.4f)s", ns_key, ret, time.monotonic() - start)
-        return ret
+        pass
 
     @abstractmethod
     async def _expire(self, key, ttl, _conn=None):
-        raise NotImplementedError()
+        pass
 
     @API.register
     @API.aiocache_enabled(fake_return=True)
@@ -453,14 +353,11 @@ class BaseCache(Generic[CacheKeyType], ABC):
         :returns: True
         :raises: :class:`asyncio.TimeoutError` if it lasts more than self.timeout
         """
-        start = time.monotonic()
-        ret = await self._clear(namespace, _conn=_conn)
-        logger.debug("CLEAR %s %d (%.4f)s", namespace, ret, time.monotonic() - start)
-        return ret
+        pass
 
     @abstractmethod
     async def _clear(self, namespace, _conn=None):
-        raise NotImplementedError()
+        pass
 
     @API.register
     @API.aiocache_enabled()
@@ -480,20 +377,15 @@ class BaseCache(Generic[CacheKeyType], ABC):
         :returns: whatever the underlying client returns
         :raises: :class:`asyncio.TimeoutError` if it lasts more than self.timeout
         """
-        start = time.monotonic()
-        ret = await self._raw(
-            command, *args, encoding=self.serializer.encoding, _conn=_conn, **kwargs
-        )
-        logger.debug("%s (%.4f)s", command, time.monotonic() - start)
-        return ret
+        pass
 
     @abstractmethod
     async def _raw(self, command, *args, **kwargs):
-        raise NotImplementedError()
+        pass
 
     @abstractmethod
     async def _redlock_release(self, key, value):
-        raise NotImplementedError()
+        pass
 
     @API.timeout
     async def close(self, *args, _conn=None, **kwargs):
@@ -504,32 +396,27 @@ class BaseCache(Generic[CacheKeyType], ABC):
 
         :raises: :class:`asyncio.TimeoutError` if it lasts more than self.timeout
         """
-        start = time.monotonic()
-        ret = await self._close(*args, _conn=_conn, **kwargs)
-        logger.debug("CLOSE (%.4f)s", time.monotonic() - start)
-        return ret
+        pass
 
     async def _close(self, *args, **kwargs):
         pass
 
     @abstractmethod
     def build_key(self, key: str, namespace: Optional[str] = None) -> CacheKeyType:
-        raise NotImplementedError()
+        pass
 
     def _str_build_key(self, key: str, namespace: Optional[str] = None) -> str:
         """Simple key builder that can be used in subclasses for build_key()."""
-        key_name = key.value if isinstance(key, Enum) else key
-        ns = self.namespace if namespace is None else namespace
-        return self._build_key(key_name, ns)
+        pass
 
     def _get_ttl(self, ttl):
-        return ttl if ttl is not SENTINEL else self.ttl
+        pass
 
     def get_connection(self):
-        return _Conn(self)
+        pass
 
     async def acquire_conn(self):
-        return self
+        pass
 
     async def release_conn(self, conn):
         pass
@@ -561,10 +448,7 @@ class _Conn:
 
     @classmethod
     def _inject_conn(cls, cmd_name):
-        async def _do_inject_conn(self, *args, **kwargs):
-            return await getattr(self._cache, cmd_name)(*args, _conn=self._conn, **kwargs)
-
-        return _do_inject_conn
+        pass
 
 
 for cmd in API.CMDS:

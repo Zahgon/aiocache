@@ -59,13 +59,13 @@ class NullSerializer(BaseSerializer):
         """
         Returns the same value
         """
-        return value
+        pass
 
     def loads(self, value):
         """
         Returns the same value
         """
-        return value
+        pass
 
 
 class StringSerializer(BaseSerializer):
@@ -87,13 +87,13 @@ class StringSerializer(BaseSerializer):
         :param value: obj Anything support cast to str
         :returns: str
         """
-        return str(value)
+        pass
 
     def loads(self, value):
         """
         Returns value back without transformations
         """
-        return value
+        pass
 
 
 class PickleSerializer(BaseSerializer):
@@ -114,7 +114,7 @@ class PickleSerializer(BaseSerializer):
         :param value: obj
         :returns: bytes
         """
-        return pickle.dumps(value, protocol=self.protocol)
+        pass
 
     def loads(self, value):
         """
@@ -123,9 +123,7 @@ class PickleSerializer(BaseSerializer):
         :param value: bytes
         :returns: obj
         """
-        if value is None:
-            return None
-        return pickle.loads(value)  # noqa: S301
+        pass
 
 
 class JsonSerializer(BaseSerializer):
@@ -146,7 +144,7 @@ class JsonSerializer(BaseSerializer):
         :param value: dict
         :returns: str
         """
-        return json.dumps(value)
+        pass
 
     def loads(self, value):
         """
@@ -155,9 +153,7 @@ class JsonSerializer(BaseSerializer):
         :param value: str
         :returns: output of ``json.loads``.
         """
-        if value is None:
-            return None
-        return json.loads(value)
+        pass
 
 
 class MsgPackSerializer(BaseSerializer):
@@ -184,7 +180,7 @@ class MsgPackSerializer(BaseSerializer):
         :param value: obj
         :returns: bytes
         """
-        return msgpack.dumps(value)
+        pass
 
     def loads(self, value):
         """
@@ -193,7 +189,4 @@ class MsgPackSerializer(BaseSerializer):
         :param value: bytes
         :returns: obj
         """
-        raw = False if self.encoding == "utf-8" else True
-        if value is None:
-            return None
-        return msgpack.loads(value, raw=raw, use_list=self.use_list)
+        pass

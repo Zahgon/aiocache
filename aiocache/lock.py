@@ -78,28 +78,16 @@ class RedLock(Generic[CacheKeyType]):
         return await self._acquire()
 
     async def _acquire(self):
-        self._value = str(uuid.uuid4())
-        try:
-            await self.client._add(self.key, self._value, ttl=self.lease)
-            RedLock._EVENTS[self.key] = asyncio.Event()
-        except ValueError:
-            await self._wait_for_release()
+        pass
 
     async def _wait_for_release(self):
-        try:
-            await asyncio.wait_for(RedLock._EVENTS[self.key].wait(), self.lease)
-        except asyncio.TimeoutError:
-            pass
-        except KeyError:  # lock was released when wait_for was rescheduled
-            pass
+        pass
 
     async def __aexit__(self, exc_type, exc_value, traceback):
         await self._release()
 
     async def _release(self):
-        removed = await self.client._redlock_release(self.key, self._value)
-        if removed:
-            RedLock._EVENTS.pop(self.key).set()
+        pass
 
 
 class OptimisticLock(Generic[CacheKeyType]):
@@ -153,8 +141,7 @@ class OptimisticLock(Generic[CacheKeyType]):
         return await self._acquire()
 
     async def _acquire(self):
-        self._token = await self.client._gets(self.ns_key)
-        return self
+        pass
 
     async def __aexit__(self, exc_type, exc_value, traceback):
         pass
@@ -167,12 +154,7 @@ class OptimisticLock(Generic[CacheKeyType]):
 
         :raises: :class:`aiocache.lock.OptimisticLockError`
         """
-        success = await self.client.set(
-            self.key, value, _cas_token=self._token, **kwargs
-        )
-        if not success:
-            raise OptimisticLockError("Value has changed since the lock started")
-        return True
+        pass
 
 
 class OptimisticLockError(Exception):
