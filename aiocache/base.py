@@ -27,11 +27,12 @@ class API:
 
     @classmethod
     def register(cls, func):
-        pass
+        API.CMDS.add(func)
+        return func
 
     @classmethod
     def unregister(cls, func):
-        pass
+        API.CMDS.discard(func)
 
     @classmethod
     def timeout(cls, func):
@@ -43,7 +44,12 @@ class API:
 
         Use 0 or None to disable the timeout.
         """
-        pass
+
+        @functools.wraps(func)
+        async def _timeout(self, *args, **kwargs):
+            pass
+
+        return _timeout
 
     @classmethod
     def aiocache_enabled(cls, fake_return=None):
@@ -54,14 +60,20 @@ class API:
 
         def enabled(func):
             @functools.wraps(func)
-            pass
+            async def _enabled(*args, **kwargs):
+                pass
+
+            return _enabled
 
         return enabled
 
     @classmethod
     def plugins(cls, func):
         @functools.wraps(func)
-        pass
+        async def _plugins(self, *args, **kwargs):
+            pass
+
+        return _plugins
 
 
 class BaseCache(Generic[CacheKeyType], ABC):
